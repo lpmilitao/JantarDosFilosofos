@@ -1,0 +1,21 @@
+# Go: binários gerados pelo run_all.sh
+bin/
+
+# Resultados brutos das execuções (gerados pelo run_all.sh)
+resultados/
+
+# IDE
+.idea/
+
+# macOS
+.DS_Store
+
+# LaTeX: ignora auxiliares e PDF gerados na compilação
+relatorio/*.aux
+relatorio/*.log
+relatorio/*.out
+relatorio/*.fls
+relatorio/*.fdb_latexmk
+relatorio/*.synctex.gz
+relatorio/*.toc
+relatorio/*.pdf
