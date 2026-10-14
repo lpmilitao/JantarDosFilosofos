@@ -96,7 +96,7 @@ type garcom struct{ vagas chan struct{} }
 func novoGarcom(limite int) *garcom {
     return &garcom{vagas: make(chan struct{}, limite)}
 }
-func (g *garcom) pedir()   { g.vagas <- struct{}{} } // bloqueia se cheio
+func (g *garcom) pedir()   { g.vagas <- struct{}{} }
 func (g *garcom) liberar() { <-g.vagas }
 \end{lstlisting}
 
@@ -120,7 +120,9 @@ primeiro.Unlock()
 \end{lstlisting}
 
 \subsection{Análise Comparativa das Soluções}
-\begin{center}
+
+\begin{table}[H]
+\centering
 \small
 \begin{tabular}{p{2.3cm}p{3.2cm}p{3.2cm}p{3.6cm}p{3cm}}
 \toprule
@@ -132,7 +134,12 @@ Máx.\ comendo (teórico) & 1 & 2 & 1 (limite 1); 2 nos demais & 2\\
 Ponto fraco & sem paralelismo & trava & serializa com limite 1 & sem garantia de justiça\\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Comparação conceitual entre as quatro implementações.}
+\label{tab:comparacao-solucoes}
+\end{table}
+
+A Tabela~\ref{tab:comparacao-solucoes} resume as principais características de cada implementação, destacando o mecanismo de sincronização utilizado, a possibilidade de \textit{deadlock}, o grau teórico de concorrência e o principal ponto fraco de cada solução.
+
 Com 5 garfos e 2 garfos por filósofo, no máximo 2 filósofos comem ao mesmo tempo, em qualquer versão. A V3 pode chegar a esse máximo sem coordenação central. A V2 com limite 1 não pode, e com limite 2 ou 4 só chega se os filósofos que comem simultaneamente não forem vizinhos.
 
 %% ------------------------------------------------------------------
@@ -154,7 +161,8 @@ Métricas coletadas: tempo total de execução, tempo médio de espera pelos gar
 \section{Resultados}
 
 \subsection{Tabela Comparativa}
-\begin{table}[h]
+
+\begin{table}[H]
 \centering
 \small
 \begin{tabular}{lrrrr}
@@ -167,11 +175,14 @@ V2 (limite 2) & 1,736 $\pm$ 0,048 & 32,410 & 93,010 & 2\\
 V2 (limite 4) & 1,876 $\pm$ 0,694 & 40,344 & 124,136 & 2\\
 V3 & 1,648 $\pm$ 0,068 & 25,150 & 124,136 & 2\\
 \midrule
-V1$^*$ (8 de 20) & 2,911 $\pm$ 0,545 & 91,7 & 122,1 & 2\\
+V1$^*$ (8 de 20) & 2,911 $\pm$ 0,545 & 91,700 & 122,100 & 2\\
 \bottomrule
 \end{tabular}
-\caption{Média de 5 execuções por versão (tempo total com desvio padrão; espera média = média das médias; maior espera e máx.\ comendo = maior valor entre as 5 execuções). Em todas as execuções concluídas, todos os filósofos fizeram os 20 ciclos. $^*$A V1 só entra com as 8 de 20 execuções que não travaram; as outras 12 são analisadas na Seção~\ref{sec:v1}. Como o deadlock é probabilístico, essa linha é um subconjunto das execuções e não é comparável diretamente às demais (a V1 também usa uma pausa de 10~ms entre os garfos e pensar sorteado entre 10 e 30~ms). O desvio alto da V2 (limite 4) vem de uma execução de 3,12~s entre cinco de cerca de 1,56~s (Seção~\ref{sec:comboio}).}
+\caption{Resultados experimentais das diferentes versões do jantar dos filósofos.}
+\label{tab:resultados-gerais}
 \end{table}
+
+A Tabela~\ref{tab:resultados-gerais} reúne as principais métricas obtidas nos experimentos: tempo total, espera média, maior espera observada e número máximo de filósofos comendo simultaneamente. Para V0, V2 e V3 são consideradas 5 execuções por configuração. A V1 aparece separadamente com apenas as 8 de 20 execuções que terminaram sem \textit{deadlock}; as outras 12 são analisadas na Seção~\ref{sec:v1}. O desvio elevado da V2 com limite 4 é consequência de uma execução de 3,12~s, discutida na Seção~\ref{sec:comboio}.
 
 \subsection{Gráficos}
 \begin{figure}[H]
@@ -238,7 +249,8 @@ Evitar deadlock não elimina starvation. Na V2 a fila do canal é atendida em or
 \subsection{Tempo total e tempo de espera}
 A tabela abaixo compara as versões com o piso teórico do tempo total, dado pelo número máximo de filósofos comendo ao mesmo tempo (100 refeições de 30~ms divididas entre eles, com o pensar sobreposto).
 
-\begin{center}
+\begin{table}[H]
+\centering
 \small
 \begin{tabular}{lrrrr}
 \toprule
@@ -251,7 +263,11 @@ V2 (limite 4) & 1,876 & 1,5 & 40,3 & 2\\
 V3 & 1,648 & 1,5 & 25,2 & 2\\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Comparação entre o tempo medido, o piso teórico e a espera pelos recursos.}
+\label{tab:piso-teorico}
+\end{table}
+
+A Tabela~\ref{tab:piso-teorico} permite comparar o tempo total observado com o menor tempo esperado para cada grau de concorrência. Ela também relaciona esse valor com a espera média pelos recursos e com o número máximo de filósofos que conseguiram comer simultaneamente.
 
 A V0 teve o maior tempo total, 5,194~s, que é a soma de todos os pensar e comer ($100\times50$~ms $=5$~s) mais o custo dos \texttt{Sleep}. Entre as versões concorrentes, a mais lenta foi a V2 com limite 1, com 3,115~s, próximo do piso de 3~s das 100 refeições serializadas. Os demais tempos ficam de 4\% a 17\% acima do piso de 1,5~s por causa da contenção e do escalonamento.
 
@@ -260,7 +276,8 @@ O maior tempo de espera pelos garfos foi o da V2 com limite 1: média de 100,8~m
 \subsection{Grau de concorrência}
 O limite teórico é de 2 filósofos comendo ao mesmo tempo (cinco garfos, dois por filósofo), e ele foi alcançado em todas as versões que o permitem.
 
-\begin{center}
+\begin{table}[H]
+\centering
 \small
 \begin{tabular}{lc}
 \toprule
@@ -274,14 +291,19 @@ V2 (limite 4) & 2 (1 nas execuções serializadas)\\
 V3 & 2\\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Número máximo de filósofos comendo simultaneamente em cada versão.}
+\label{tab:grau-concorrencia}
+\end{table}
+
+A Tabela~\ref{tab:grau-concorrencia} mostra o grau de concorrência efetivamente observado. O valor 2 representa o máximo possível com cinco garfos, enquanto o valor 1 indica que a execução ficou serializada na etapa de alimentação.
 
 O tempo total acompanha o grau de concorrência. Com 1 filósofo comendo por vez, o tempo foi de 5,19~s (V0) e 3,12~s (V2 com limite 1). Com 2, ficou entre 1,56 e 1,76~s (V3 e V2 com limites 2 e 4). A V0 é mais lenta que a V2 com limite 1 mesmo tendo o mesmo máximo de 1 comendo, porque na V0 o pensar também é sequencial, enquanto na V2 ele se sobrepõe ao comer dos outros. A execução 5 da V2 com limite 4 ilustra a relação: só teve 1 filósofo comendo e levou 3,12~s, o tempo do regime serializado, apesar de o mecanismo permitir 4 candidatos.
 
 \subsection{Impacto da sincronização excessiva da V2}
 Com limite 1, a V2 elimina o paralelismo do comer: apenas um filósofo come por vez, mesmo havendo garfos livres para um não vizinho. Os garfos viram redundantes, já que nunca há disputa por eles. A tabela mostra o efeito de afrouxar o limite, com o tempo do limite 4 tomado das execuções que não caíram no regime serializado.
 
-\begin{center}
+\begin{table}[H]
+\centering
 \small
 \begin{tabular}{lrrr}
 \toprule
@@ -293,7 +315,11 @@ V2 (limite 4) & 1,564 & 50\% & 25,2\\
 V3 & 1,648 & 47\% & 25,2\\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{Impacto da redução da sincronização excessiva sobre o desempenho.}
+\label{tab:impacto-sincronizacao}
+\end{table}
+
+A Tabela~\ref{tab:impacto-sincronizacao} compara o efeito de diferentes limites do garçom sobre o tempo total e a espera média. O objetivo é mostrar quanto desempenho é recuperado quando mais de um filósofo pode disputar os recursos, além de permitir a comparação com a V3.
 
 Passar de 1 para 2 é o que importa; de 2 para 4 quase não há ganho, porque o teto físico já é 2 comendo. Em relação à V3, igualmente livre de deadlock, a V2 com limite 1 é 89\% mais lenta, e esse é o custo da sincronização desnecessária.
 
@@ -306,9 +332,46 @@ A V1 mostra que exclusão mútua simples por garfo basta para travar: com cada f
 
 %% ------------------------------------------------------------------
 \section*{Repositório}
-Código-fonte completo: \url{https://github.com/lpmilitao/JantarDosFilosofos}
+Código-fonte completo: \url{https://github.com/DouglaSilvano/FPPD_Trabalho_1}
 
 % \bibliographystyle{plain}
-% \bibliography{referencias}
+\begin{thebibliography}{99}
+
+\bibitem{baeldung}
+SARI, Sercan.
+\textit{The Dining Philosophers}.
+Baeldung on Computer Science, 2022.
+Disponível em: \url{https://www.baeldung.com/cs/dining-philosophers}.
+Acesso em: 3 out. 2026.
+
+\bibitem{zerobone}
+ZEROBONE.
+\textit{The Dining Philosophers Problem and Different Ways of Solving It}.
+2021.
+Disponível em: \url{https://zerobone.net/blog/cs/dining-philosophers-problem/}.
+Acesso em: 3 out. 2026.
+
+\bibitem{alam-deadlock}
+ALAM, Rafiul.
+\textit{Dining Philosophers: Five Forks and a Deadlock}.
+2025.
+Disponível em: \url{https://alamrafiul.com/blogs/dining-philosophers-deadlock/}.
+Acesso em: 3 out. 2026.
+
+\bibitem{alam-waiter}
+ALAM, Rafiul.
+\textit{Dining Philosophers: The Waiter Solution}.
+2025.
+Disponível em: \url{https://alamrafiul.com/blogs/dining-philosophers-waiter/}.
+Acesso em: 3 out. 2026.
+
+\bibitem{alam-asymmetric}
+ALAM, Rafiul.
+\textit{Dining Philosophers: The Asymmetric Solution}.
+2025.
+Disponível em: \url{https://alamrafiul.com/blogs/dining-philosophers-asymmetric/}.
+Acesso em: 3 out. 2026.
+
+\end{thebibliography}
 
 \end{document}
